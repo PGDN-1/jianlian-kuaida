@@ -1,0 +1,55 @@
+{
+  "name": "jianlian-kuaida",
+  "productName": "简练快打",
+  "version": "1.0.0",
+  "description": "简练快打 —— 打字练习：英文拼写、中文拼音、古诗词跟打",
+  "main": "main.js",
+  "author": "li",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "prep": "node scripts/copy-renderer.js",
+    "start": "npm run prep && electron .",
+    "dist": "npm run prep && electron-builder --win nsis portable --x64",
+    "dist:dir": "npm run prep && electron-builder --win --dir"
+  },
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.li.jianliankuaida",
+    "productName": "简练快打",
+    "copyright": "Copyright © 2026 li",
+    "directories": {
+      "output": "../dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "简练快打",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "jianlian-kuaida-setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "jianlian-kuaida-portable-${version}.exe"
+    }
+  }
+}

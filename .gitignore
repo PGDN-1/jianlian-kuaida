@@ -1,0 +1,19 @@
+# 构建产物
+dist/
+app/node_modules/
+app/renderer/
+
+# 运行时数据（练习成绩、错题本、自定义词库）
+app-data/
+
+# 临时文件
+*.log
+app/build/launch-*.txt
+app/build/e2.txt
+app/build/o2.txt
+*.blockmap
+
+# 系统垃圾
+Thumbs.db
+Desktop.ini
+.DS_Store
