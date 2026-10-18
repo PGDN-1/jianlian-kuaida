@@ -2,21 +2,32 @@
 
 <p align="center"><img src="app/build/icon-512.png" width="120" alt="简练快打"></p>
 
+<p align="center">
+  <a href="https://github.com/PGDN-1/jianlian-kuaida/actions/workflows/check.yml"><img src="https://github.com/PGDN-1/jianlian-kuaida/actions/workflows/check.yml/badge.svg" alt="check"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
+  <img src="https://img.shields.io/badge/single--file-HTML-2ea44f.svg" alt="single file">
+  <img src="https://img.shields.io/badge/offline-no%20network-2ea44f.svg" alt="offline">
+</p>
+
 一个单文件的打字练习网页：`index.html` 一个文件搞定，零依赖、不联网、双击就能用。另有 Electron 桌面版外壳（`app/`），可打包成 Windows 安装包。
+
+**在线试玩：<https://pgdn-1.github.io/jianlian-kuaida/>**
 
 An offline, single-file typing trainer for **Chinese pinyin + English**, with CET-4/6 word lists, Oxford 3000 headwords, IPA, parts of speech, 496 bilingual sentences, and 72 classical Chinese poems. No build step, no dependencies, no network — just open `index.html`. An Electron wrapper for a native desktop app lives in `app/`.
 
 - 代码授权：[MIT](LICENSE)
 - 数据来源与授权：[DATA-SOURCES.md](DATA-SOURCES.md)
 - 桌面版构建说明：[app/README.md](app/README.md)
+- 在线网页版：<https://pgdn-1.github.io/jianlian-kuaida/>
 
 ## 打开方式
 
-三种都行：
+四种都行：
 
-1. **桌面版（推荐）**：装 `D:\DS工作站\typing-lab\dist\简练快打-安装版-1.0.0.exe`，或直接用免安装的 `简练快打-便携版-1.0.0.exe`。桌面版是 Electron 外壳，有自己的窗口和图标，数据存在 `D:\DS工作站\typing-lab\app-data`，不会被浏览器清缓存清掉。外壳源码在 `app/`（见 `app/README.md`）。
-2. **双击网页版**：直接双击 `index.html`，或用任意浏览器打开（Chrome / Edge / Firefox 均可）。
-3. **桌面快捷方式**：`C:\Users\li\Desktop\简练快打.lnk` 指向网页版，双击即用。
+1. **在线网页版**：直接打开 <https://pgdn-1.github.io/jianlian-kuaida/>，什么都不用下（GitHub Pages 托管 `index.html`，数据存在该浏览器的 localStorage）。
+2. **桌面版（推荐）**：装 `D:\DS工作站\typing-lab\dist\简练快打-安装版-1.0.0.exe`，或直接用免安装的 `简练快打-便携版-1.0.0.exe`。桌面版是 Electron 外壳，有自己的窗口和图标，数据存在 `D:\DS工作站\typing-lab\app-data`，不会被浏览器清缓存清掉。外壳源码在 `app/`（见 `app/README.md`）。
+3. **双击网页版**：直接双击 `index.html`，或用任意浏览器打开（Chrome / Edge / Firefox 均可）。
+4. **桌面快捷方式**：`C:\Users\li\Desktop\简练快打.lnk` 指向网页版，双击即用。
 
 网页版不需要服务器、不需要安装任何东西，数据存在浏览器的 localStorage 里。网页版和桌面版是两套独立数据，搬家用「设置 → 数据备份 → 导出/导入」。
 

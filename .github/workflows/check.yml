@@ -1,0 +1,28 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  syntax-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Syntax check the inline script
+        run: |
+          node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');const s=h.indexOf('<script>')+8;const e=h.lastIndexOf('</script>');if(s<8||e<s)throw new Error('script tag not found');fs.writeFileSync('app.js',h.slice(s,e));"
+          node --check app.js
+
+      - name: Install jsdom
+        run: npm i jsdom@25 --no-save --silent
+
+      - name: Load the page and assert the data is intact
+        run: node .github/smoke.js
