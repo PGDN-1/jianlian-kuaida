@@ -19,6 +19,10 @@ An offline, single-file typing trainer for **Chinese pinyin + English**, with CE
 - 数据来源与授权：[DATA-SOURCES.md](DATA-SOURCES.md)
 - 桌面版构建说明：[app/README.md](app/README.md)
 - 在线网页版：<https://pgdn-1.github.io/jianlian-kuaida/>
+- Windows 安装包：[Releases · v1.0.0](https://github.com/PGDN-1/jianlian-kuaida/releases/tag/v1.0.0)
+  - 安装版 `jianlian-kuaida-setup-1.0.0.exe`（约 107 MB，可选安装目录、自动建快捷方式）
+  - 便携版 `jianlian-kuaida-portable-1.0.0.exe`（约 106 MB，免安装，双击即用）
+  - 未做代码签名，首次运行 Windows SmartScreen 可能提示「未知发布者」，点「更多信息 → 仍要运行」即可
 
 ## 打开方式
 
