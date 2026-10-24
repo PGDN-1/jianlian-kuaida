@@ -26,6 +26,26 @@ An offline, single-file typing trainer for **Chinese pinyin + English**, with CE
   - 便携版 `jianlian-kuaida-portable-<版本>.exe`（约 106 MB，免安装，双击即用）
   - 未做代码签名，首次运行 Windows SmartScreen 可能提示「未知发布者」，点「更多信息 → 仍要运行」即可
 
+## 界面截图
+
+| 英文看打（音标 · 释义 · 实时速度） | 中文拼音 |
+| --- | --- |
+| ![英文看打](docs/shots/01-en-typing.png) | ![中文拼音](docs/shots/02-zh-pinyin.png) |
+
+| 诗词跟打（长文滚动跟随） | 深色模式 |
+| --- | --- |
+| ![诗词跟打](docs/shots/03-poem-scroll.png) | ![深色模式](docs/shots/04-dark-mode.png) |
+
+| 成绩统计（速度 / 正确率曲线） | 设置（音效 · 背景 · 字号） |
+| --- | --- |
+| ![成绩统计](docs/shots/05-stats.png) | ![设置](docs/shots/06-settings.png) |
+
+| 错题本（按错误次数加权） | 成绩分享卡片 |
+| --- | --- |
+| ![错题本](docs/shots/07-mistakes.png) | ![分享卡片](docs/shots/08-share-card.png) |
+
+截图由 `tools/shots.js` 用无头 Edge 截取真实运行画面（`node tools/shots.js` 可复现），封面图由 `tools/poster.js` 生成。
+
 ## 打开方式
 
 五种都行：
