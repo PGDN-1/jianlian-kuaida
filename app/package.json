@@ -1,7 +1,7 @@
 {
   "name": "jianlian-kuaida",
   "productName": "简练快打",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "简练快打 —— 打字练习：英文拼写、中文拼音、古诗词跟打",
   "main": "main.js",
   "author": "li",

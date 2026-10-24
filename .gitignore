@@ -2,6 +2,7 @@
 dist/
 app/node_modules/
 app/renderer/
+node_modules/
 
 # 运行时数据（练习成绩、错题本、自定义词库）
 app-data/

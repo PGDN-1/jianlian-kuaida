@@ -1,0 +1,34 @@
+name: release
+
+# 打 tag（v*）或手动触发时，在 Windows 上构建安装包/便携版并上传到 Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build Windows installers
+        working-directory: app
+        run: |
+          npm ci
+          npm run dist
+
+      - name: Upload artifacts to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/jianlian-kuaida-setup-*.exe
+            dist/jianlian-kuaida-portable-*.exe
+          fail_on_unmatched_files: true

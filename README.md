@@ -7,33 +7,36 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
   <img src="https://img.shields.io/badge/single--file-HTML-2ea44f.svg" alt="single file">
   <img src="https://img.shields.io/badge/offline-no%20network-2ea44f.svg" alt="offline">
+  <img src="https://img.shields.io/badge/PWA-installable-2ea44f.svg" alt="PWA">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue.svg" alt="version">
 </p>
 
-一个单文件的打字练习网页：`index.html` 一个文件搞定，零依赖、不联网、双击就能用。另有 Electron 桌面版外壳（`app/`），可打包成 Windows 安装包。
+一个单文件的打字练习网页：`index.html` 一个文件搞定，零依赖、不联网、双击就能用，也可以安装成 PWA 应用。另有 Electron 桌面版外壳（`app/`），可打包成 Windows 安装包。
 
 **在线试玩：<https://pgdn-1.github.io/jianlian-kuaida/>**
 
-An offline, single-file typing trainer for **Chinese pinyin + English**, with CET-4/6 word lists, Oxford 3000 headwords, IPA, parts of speech, 496 bilingual sentences, and 72 classical Chinese poems. No build step, no dependencies, no network — just open `index.html`. An Electron wrapper for a native desktop app lives in `app/`.
+An offline, single-file typing trainer for **Chinese pinyin + English**, with CET-4/6 word lists, Oxford 3000 headwords, IPA, parts of speech, 496 bilingual sentences, and 72 classical Chinese poems. No build step, no dependencies, no network — just open `index.html`. Installable as a PWA. An Electron wrapper for a native desktop app lives in `app/`.
 
 - 代码授权：[MIT](LICENSE)
 - 数据来源与授权：[DATA-SOURCES.md](DATA-SOURCES.md)
 - 桌面版构建说明：[app/README.md](app/README.md)
 - 在线网页版：<https://pgdn-1.github.io/jianlian-kuaida/>
-- Windows 安装包：[Releases · v1.0.0](https://github.com/PGDN-1/jianlian-kuaida/releases/tag/v1.0.0)
-  - 安装版 `jianlian-kuaida-setup-1.0.0.exe`（约 107 MB，可选安装目录、自动建快捷方式）
-  - 便携版 `jianlian-kuaida-portable-1.0.0.exe`（约 106 MB，免安装，双击即用）
+- Windows 安装包：[Releases](https://github.com/PGDN-1/jianlian-kuaida/releases)（打 `v*` tag 自动构建，见下文「桌面版发布」）
+  - 安装版 `jianlian-kuaida-setup-<版本>.exe`（约 107 MB，可选安装目录、自动建快捷方式）
+  - 便携版 `jianlian-kuaida-portable-<版本>.exe`（约 106 MB，免安装，双击即用）
   - 未做代码签名，首次运行 Windows SmartScreen 可能提示「未知发布者」，点「更多信息 → 仍要运行」即可
 
 ## 打开方式
 
-四种都行：
+五种都行：
 
-1. **在线网页版**：直接打开 <https://pgdn-1.github.io/jianlian-kuaida/>，什么都不用下（GitHub Pages 托管 `index.html`，数据存在该浏览器的 localStorage）。
-2. **桌面版（推荐）**：装 `D:\DS工作站\typing-lab\dist\简练快打-安装版-1.0.0.exe`，或直接用免安装的 `简练快打-便携版-1.0.0.exe`。桌面版是 Electron 外壳，有自己的窗口和图标，数据存在 `D:\DS工作站\typing-lab\app-data`，不会被浏览器清缓存清掉。外壳源码在 `app/`（见 `app/README.md`）。
-3. **双击网页版**：直接双击 `index.html`，或用任意浏览器打开（Chrome / Edge / Firefox 均可）。
-4. **桌面快捷方式**：`C:\Users\li\Desktop\简练快打.lnk` 指向网页版，双击即用。
+1. **在线网页版**：直接打开 <https://pgdn-1.github.io/jianlian-kuaida/>，什么都不用下（GitHub Pages 托管，数据存在该浏览器的 localStorage）。
+2. **安装成 PWA 应用（v2.0 新增）**：用 Chrome / Edge 打开在线网页版，点地址栏右侧的「安装」图标（或菜单 → 将 TypeLab 安装为应用），就能像原生应用一样从开始菜单启动，且完全离线可用。页面在 `file://` 下双击打开时这一套自动不启用，行为与以前完全一致。
+3. **桌面版（推荐）**：装 `D:\DS工作站\typing-lab\dist\简练快打-安装版-2.0.0.exe`，或直接用免安装的 `简练快打-便携版-2.0.0.exe`。桌面版是 Electron 外壳，有自己的窗口和图标，数据存在 `D:\DS工作站\typing-lab\app-data`，不会被浏览器清缓存清掉。外壳源码在 `app/`（见 `app/README.md`）。
+4. **双击网页版**：直接双击 `index.html`，或用任意浏览器打开（Chrome / Edge / Firefox 均可）。
+5. **桌面快捷方式**：`C:\Users\li\Desktop\简练快打.lnk` 指向网页版，双击即用。
 
-网页版不需要服务器、不需要安装任何东西，数据存在浏览器的 localStorage 里。网页版和桌面版是两套独立数据，搬家用「设置 → 数据备份 → 导出/导入」。
+网页版不需要服务器、不需要安装任何东西，数据存在浏览器的 localStorage 里。网页版、PWA 和桌面版之间是独立数据，搬家用「词库管理 → 数据备份 → 导出/导入」。
 
 ## 三个标签页 · 六种模式
 
@@ -101,7 +104,7 @@ ability|能力
 
 - 每题第一次敲错、跳过（Esc）、看答案，都会记进错题本（同一个词只累计次数）
 - 弹窗里能看最近的错题、一键复制、清空
-- 「用错题练一组」会把当前分类下的错题拼成临时词库，专门复习
+- 「用错题练一组」会把当前分类下的错题拼成临时词库，专门复习；**错得越多的词重复出现次数越多**（按错误次数 1~5 次加权，v2.0 新增）
 
 ## 快捷键
 
@@ -118,12 +121,16 @@ ability|能力
 
 - **打字字号**：滑块 75%–180%，也可以点 `A－` / `A＋` 微调；题目大字只按 38% 的比例跟着放大，主要放大的是打字区。
 - **背景颜色**：8 个预设（米白 / 纸黄 / 护眼绿 / 淡蓝 / 浅紫 / 石墨 / 墨绿 / 夜蓝），点最后的取色器可以自选任意颜色。
+- **外观模式（v2.0 新增）**：`跟随系统` / `浅色` / `深色` 三选一。「跟随系统」会随系统的深浅色设置自动切换；一旦自选背景色，以自选为准。
 - **自动反色**：背景亮度低于 52% 时，正文、边框、光标、逐字着色会自动切成深底配色（亮绿=对，亮红=错），不用手动调文字颜色。
-- 设置存在 `typelab.look`，和词库、错题本一样只在本机；点「恢复默认」一键还原。
+- **键盘音效（v2.0 新增）**：击键反馈音（打对 / 打错 / 过题 / 全组完成各有不同的声音），默认关闭，可调音量；用浏览器 WebAudio 合成，不加载任何音频文件。
+- 设置存在 `typelab.look` 和 `typelab.sound`，和词库、错题本一样只在本机；点「恢复默认」一键还原字号与背景。
 
 ## 玩法说明
 
 - **严格模式**：必须一字不差才能过，打错要退格改对——这样正确率才可信。
+- **长文滚动跟随（v2.0 新增）**：长诗词、长句打字时，当前行滚出屏幕后会自动跟着滚动，视线不用离开题目；移动端软键盘弹出时同样保证当前行可见。
+- **顺手不卡（v2.0 新增）**：打字时只重画发生变化的那几个字符（增量渲染），长诗跟打也不会一卡一顿；实时速度曲线每 300ms 采样一次。
 - 标点、空格不计分：诗词的句号逗号、英文长句里的空格和标点、拼音音节间的空格都不用打，只比文字本身。
 - 速度：英文按 **WPM**（正确字符 ÷ 5 ÷ 分钟），中文、拼音和诗词按 **字/分**。
 - 每组结束显示题数、速度、正确率，并按标签页记录最好成绩（右上角）。
@@ -132,6 +139,29 @@ ability|能力
 - **长句逐词注释**：英文长句跟打时，**只在有难度的实词下方**显示一行小字写明词性和中文（如 `traditional` 下方 `adj. 传统的`）；a/the/of/is 这类功能词和 family、time、take 这类过于基础的高频词不标注，避免整句密密麻麻。判定规则：长度 ≥5、不在内置基础词表 `BASIC` 里、且能在四六级词库中查到（词形变化会自动还原）。隐藏答案的模式（看中文写英文、听写）不显示注释，避免泄题。
 - **双击查词**：长句跟打时，把鼠标移到任意单词上**双击**（或点右键），会在光标旁边弹出小窗，显示这个单词的音标、词性和完整中文释义——包括那些因为太简单而没在小字里标注的 a/the/family 之类的词。
 - **变形词也能查**：`restaurants`、`studied`、`cities`、`knives`、`leaves`、`went`、`took`、`better`、`happier`、`teeth`、`mice` 这类复数、过去式、比较级、不规则变形都能查到，小窗会同时给出**原形**（右侧灰色 `← restaurant`）和释义；一个词有多种可能的原形时（如 `leaves` → `leaf` 叶子 / `leave` 离开）会分两行都列出来。带连字符的词（`high-speed`、`part-time`）和 `Wi-Fi`、`o'clock` 也能查。词库查不到的词（人名、地名等专有名词）会提示「词库暂未收录」。小窗在 12 秒后、切换下一题、滚动页面或按 `Esc` 时自动消失。
+
+## 成绩统计与分享（v2.0 新增）
+
+工具栏多了一个「成绩」按钮：
+
+- **历史成绩**：每打完一组自动记录一条（分类、模式、词库、题数、速度、正确率、用时），最多保留 500 条，只存本机。
+- **汇总**：练习组数、总时长、完成题数、总字符、平均速度、平均正确率，可按 英文 / 中文 / 诗词 筛选。
+- **曲线**：最近 40 组的速度（实线）+ 正确率（虚线）走势图，一眼看出自己在进步还是波动。
+- **导出 CSV**：全部成绩导出成表格（带 BOM，Excel 直接打开不乱码）。
+- **分享本组成绩**：把最近一组的成绩画成一张 PNG 卡片（速度、正确率、用时、分类模式、日期），保存后可以发朋友圈或群里。
+- 右上角的最佳成绩改为按**整组**记录（不再是单题速度），更可信。
+
+练习过程中，统计数字下方还有一条**实时速度曲线**，每 300ms 采样一次，当前组的快慢变化随时可见。
+
+## 桌面版发布
+
+桌面安装包由 GitHub Actions 自动构建：给仓库打一个 `v` 开头的 tag（如 `v2.0.0`）推上去，`.github/workflows/release.yml` 会在 Windows 上构建安装版 + 便携版并挂到对应 Release 下。本地手动构建则是：
+
+```bash
+cd app
+npm ci
+npm run dist     # 产物在仓库根目录 dist/
+```
 
 ## 已知限制
 
@@ -146,10 +176,12 @@ ability|能力
 | localStorage 键 | 内容 |
 | --- | --- |
 | `typelab.prefs` | 上次的标签页、模式、词库、题量、乱序开关、中文输入方式（拼音/汉字） |
-| `typelab.best` | 各标签页最好速度与正确率 |
+| `typelab.best` | 各标签页最好速度与正确率（按整组记录，v2.0 起） |
+| `typelab.history` | 历史成绩，每打完一组一条，最多 500 条（v2.0 新增） |
 | `typelab.mistakes` | 错题本（最多 600 条） |
 | `typelab.custom` | 自定义词库 |
-| `typelab.look` | 外观设置（背景色、字号倍数） |
+| `typelab.look` | 外观设置（背景色、字号倍数、外观模式 auto/light/dark） |
+| `typelab.sound` | 键盘音效（开关、音量，默认关，v2.0 新增） |
 
 清空方法：浏览器开发者工具 → Application → Local Storage → 删除对应键，或在弹窗里清空错题本。
 

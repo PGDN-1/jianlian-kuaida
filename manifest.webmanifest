@@ -1,0 +1,18 @@
+{
+  "name": "简练快打 · TypeLab 打字实验室",
+  "short_name": "简练快打",
+  "description": "单文件离线打字练习：英文四六级拼写、中文拼音、古诗词跟打与默写，数据只存本机。",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8f8f6",
+  "theme_color": "#2f6f5e",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -4,7 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TypeLab 打字实验室 · 中英文拼写 / 诗词默写</title>
-<meta name="description" content="单文件网页版打字练习：英文四六级词库拼写、中文词语听写、古典诗词跟打与默写。">
+<meta name="description" content="单文件网页版打字练习：英文四六级词库拼写、中文词语听写、古典诗词跟打与默写。可安装为 PWA，离线可用。">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#2f6f5e">
 <style>
 :root{
   --bg:#f8f8f6; --card:#ffffff; --fg:#1c1c1a; --muted:#66665e; --line:#e0e0d8; --hint:#3f3f38;
@@ -142,6 +146,32 @@ input[type=color]{width:40px;height:34px;padding:0;border:1px solid var(--line);
   .stats b{font-size:16px}
   .brand em{display:none}
 }
+
+/* ---- v2.0 新增：实时速度条 / 分段切换 / 成绩弹窗 ---- */
+#spark{margin-top:10px;height:38px;width:100%;display:block}
+#spark[hidden]{display:none}
+.seg{display:inline-flex;gap:2px;background:var(--chip-bg);padding:3px;border-radius:9px}
+.seg button{border:0;background:transparent;font:inherit;font-size:12px;color:var(--chip-fg);padding:4px 11px;border-radius:7px;cursor:pointer}
+.seg button.on{background:var(--chip-on);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.chkrow{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:12px}
+.chkrow input[type=range]{flex:1;min-width:110px;accent-color:var(--accent);margin:0}
+.chkrow .fsval{min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+.chartbox{margin-top:10px}
+.legend{display:flex;gap:16px;font-size:11.5px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.sum{display:flex;gap:24px;flex-wrap:wrap;margin:10px 0 4px}
+.sum .cell{display:flex;flex-direction:column;gap:2px}
+.sum .cell b{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.sum .cell span{font-size:11.5px;color:var(--muted)}
+.hist{list-style:none;margin:8px 0 0;padding:0;font-size:12.5px}
+.hist li{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.hist li b{font-weight:600;font-variant-numeric:tabular-nums}
+.hist li span{color:var(--muted)}
+.chart-tip{font-size:12px;color:var(--muted);margin-top:8px}
+button.tiny{font:inherit;font-size:11.5px;padding:2px 9px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--btn-fg);cursor:pointer}
+button.tiny:hover{background:var(--btn-hover)}
+/* 长文跟打：当前行距视口上下留 80px，滚动跟随时不贴边 */
+.target .ch{scroll-margin-top:84px;scroll-margin-bottom:96px}
 </style>
 </head>
 <body>
@@ -166,6 +196,7 @@ input[type=color]{width:40px;height:34px;padding:0;border:1px solid var(--line);
     <div class="spacer"></div>
     <button class="ghost" id="settingsBtn">设置</button>
     <button class="ghost" id="manageBtn">词库管理</button>
+    <button class="ghost" id="statsBtn">成绩</button>
     <button class="primary" id="startBtn">开始 / 重开</button>
   </div>
 
@@ -176,6 +207,7 @@ input[type=color]{width:40px;height:34px;padding:0;border:1px solid var(--line);
     <div><b id="sAcc">100%</b><span>正确率</span></div>
     <div><b id="sErr">0</b><span>错误</span></div>
   </div>
+  <svg id="spark" viewBox="0 0 600 38" preserveAspectRatio="none" aria-label="实时速度曲线" hidden></svg>
 
   <main class="stage" id="stage">
     <div class="prompt" id="prompt"></div>
@@ -12257,7 +12289,7 @@ function shuffle(a) {
   return a;
 }
 
-var K = { best: 'typelab.best', miss: 'typelab.mistakes', custom: 'typelab.custom', prefs: 'typelab.prefs', look: 'typelab.look' };
+var K = { best: 'typelab.best', miss: 'typelab.mistakes', custom: 'typelab.custom', prefs: 'typelab.prefs', look: 'typelab.look', hist: 'typelab.history', snd: 'typelab.sound' };
 function load(k, d) {
   try { var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }
   catch (e) { return d; }
@@ -12279,7 +12311,23 @@ function toast(msg) {
 var LOOK = load(K.look, {}) || {};
 if (typeof LOOK.fs !== 'number' || !isFinite(LOOK.fs) || LOOK.fs <= 0) LOOK.fs = 1;
 LOOK.fs = Math.min(1.8, Math.max(0.75, LOOK.fs));
-if (!/^#[0-9a-fA-F]{6}$/.test(String(LOOK.bg || ''))) LOOK.bg = '#f8f8f6';
+if (LOOK.bg != null && !/^#[0-9a-fA-F]{6}$/.test(String(LOOK.bg))) LOOK.bg = null;
+/* dark: 'auto' 跟随系统 | 'light' | 'dark'；用户自选背景色时记 'manual'（优先级最高） */
+if (LOOK.dark !== 'auto' && LOOK.dark !== 'light' && LOOK.dark !== 'dark' && LOOK.dark !== 'manual') LOOK.dark = LOOK.bg ? 'manual' : 'auto';
+var DARK_MQ = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')) || null;
+var SYS_DARK = !!(DARK_MQ && DARK_MQ.matches);
+function effBg() {
+  if (LOOK.bg) return LOOK.bg;
+  if (LOOK.dark === 'dark') return '#1b1b18';
+  if (LOOK.dark === 'light') return '#f8f8f6';
+  return SYS_DARK ? '#1b1b18' : '#f8f8f6';
+}
+if (DARK_MQ && DARK_MQ.addEventListener) {
+  DARK_MQ.addEventListener('change', function () {
+    SYS_DARK = DARK_MQ.matches;
+    if (LOOK.dark === 'auto') { applyLook(); refreshSetUI(); }
+  });
+}
 
 var PRESETS = [
   { bg: '#f8f8f6', t: '米白' },
@@ -12313,7 +12361,7 @@ function luma(hex) {
 }
 
 function applyLook() {
-  var bg = LOOK.bg, dark = luma(bg) < 0.52, r = document.documentElement.style;
+  var bg = effBg(), dark = luma(bg) < 0.52, r = document.documentElement.style;
   r.setProperty('--bg', bg);
   r.setProperty('--fs', String(LOOK.fs));
   r.setProperty('--card', dark ? shade(bg, .10) : shade(bg, .55));
@@ -12342,11 +12390,58 @@ function applyLook() {
 }
 
 function setLook(bg, fs) {
-  if (bg) LOOK.bg = bg;
+  if (bg) { LOOK.bg = bg; LOOK.dark = 'manual'; }
   if (typeof fs === 'number' && isFinite(fs)) LOOK.fs = Math.min(1.8, Math.max(0.75, fs));
   applyLook();
-  save(K.look, { bg: LOOK.bg, fs: LOOK.fs });
+  save(K.look, { bg: LOOK.bg, dark: LOOK.dark, fs: LOOK.fs });
   refreshSetUI();
+}
+
+/* 外观模式：auto 跟随系统 / light 浅色 / dark 深色（自选背景色仍优先） */
+function setDark(m) {
+  LOOK.dark = (m === 'light' || m === 'dark') ? m : 'auto';
+  applyLook();
+  save(K.look, { bg: LOOK.bg, dark: LOOK.dark, fs: LOOK.fs });
+  refreshSetUI();
+}
+
+/* ========== 键盘音效（v2.0） ========== */
+var SND = load(K.snd, {}) || {};
+if (typeof SND.on !== 'boolean') SND.on = false;
+if (typeof SND.vol !== 'number' || !isFinite(SND.vol) || SND.vol < 0) SND.vol = 0.5;
+SND.vol = Math.min(1, SND.vol);
+var _actx = null;
+function setSnd(on, vol) {
+  if (typeof on === 'boolean') SND.on = on;
+  if (typeof vol === 'number' && isFinite(vol)) SND.vol = Math.min(1, Math.max(0, vol));
+  save(K.snd, { on: SND.on, vol: SND.vol });
+  refreshSetUI();
+}
+/* kind: ok 打对 / err 打错 / tick 过题 / done 全组完成 */
+function sndPlay(kind) {
+  if (!SND.on) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!_actx) _actx = new AC();
+    if (_actx.state === 'suspended' && _actx.resume) _actx.resume();
+    var t = _actx.currentTime;
+    var vol = SND.vol;
+    function blip(freq, dur, delay, type, gain) {
+      var o = _actx.createOscillator(), g = _actx.createGain();
+      o.type = type || 'square';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t + delay);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain * vol), t + delay + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + delay + dur);
+      o.connect(g); g.connect(_actx.destination);
+      o.start(t + delay); o.stop(t + delay + dur + 0.02);
+    }
+    if (kind === 'ok') blip(760, 0.045, 0, 'square', 0.10);
+    else if (kind === 'err') blip(180, 0.07, 0, 'sawtooth', 0.10);
+    else if (kind === 'tick') blip(520, 0.05, 0, 'triangle', 0.09);
+    else if (kind === 'done') { blip(523, 0.09, 0, 'triangle', 0.10); blip(659, 0.09, 0.10, 'triangle', 0.10); blip(784, 0.16, 0.20, 'triangle', 0.10); }
+  } catch (e) { }
 }
 
 function refreshSetUI() {
@@ -12354,12 +12449,19 @@ function refreshSetUI() {
   if (!r) return;
   r.value = String(LOOK.fs);
   $('setFsVal').textContent = Math.round(LOOK.fs * 100) + '%';
-  $('setColor').value = LOOK.bg;
+  $('setColor').value = effBg();
   var sws = document.querySelectorAll('.sw');
   for (var i = 0; i < sws.length; i++) {
-    var on = String(sws[i].getAttribute('data-bg') || '').toLowerCase() === LOOK.bg.toLowerCase();
+    var on = String(sws[i].getAttribute('data-bg') || '').toLowerCase() === effBg().toLowerCase();
     sws[i].className = 'sw' + (on ? ' on' : '');
   }
+  var segs = document.querySelectorAll('#setDarkSeg button');
+  for (var j = 0; j < segs.length; j++) {
+    segs[j].className = segs[j].getAttribute('data-v') === LOOK.dark ? 'on' : '';
+  }
+  var sndOn = $('setSndOn'), sndVol = $('setSndVol');
+  if (sndOn) sndOn.checked = !!SND.on;
+  if (sndVol) { sndVol.value = String(Math.round(SND.vol * 100)); $('setSndVal').textContent = Math.round(SND.vol * 100) + '%'; }
 }
 
 function buildSettings() {
@@ -12413,6 +12515,35 @@ function buildSettings() {
   sw.appendChild(custom);
   card.appendChild(sw);
 
+  var h3 = rowEl('h3', null, '外观模式');
+  card.appendChild(h3);
+  var seg = rowEl('div', 'seg'); seg.id = 'setDarkSeg';
+  [['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']].forEach(function (p) {
+    var b = rowEl('button', null, p[1]); b.type = 'button'; b.setAttribute('data-v', p[0]);
+    b.addEventListener('click', function () { setDark(p[0]); });
+    seg.appendChild(b);
+  });
+  card.appendChild(seg);
+  card.appendChild(rowEl('p', 'tip', '「跟随系统」随系统的深浅色设置自动切换；自选背景色后以自选为准。'));
+
+  var h4 = rowEl('h3', null, '键盘音效');
+  h4.appendChild(rowEl('span', 'tag', '击键反馈音，默认关闭'));
+  card.appendChild(h4);
+  var sndRow = rowEl('div', 'chkrow');
+  var sndChk = document.createElement('input');
+  sndChk.type = 'checkbox'; sndChk.id = 'setSndOn';
+  sndRow.appendChild(sndChk);
+  sndRow.appendChild(rowEl('span', null, '开启击键音'));
+  card.appendChild(sndRow);
+  var volRow = rowEl('div', 'chkrow');
+  var volDown = rowEl('button', 'mini', '－'); volDown.id = 'setSndDown'; volDown.type = 'button';
+  var volRange = document.createElement('input');
+  volRange.type = 'range'; volRange.id = 'setSndVol'; volRange.min = '0'; volRange.max = '100'; volRange.step = '5';
+  volRange.setAttribute('aria-label', '击键音音量');
+  var volVal = rowEl('span', 'fsval', ''); volVal.id = 'setSndVal';
+  volRow.appendChild(volDown); volRow.appendChild(volRange); volRow.appendChild(volVal);
+  card.appendChild(volRow);
+
   card.appendChild(rowEl('p', 'tip', '除预设外还可以点取色器自选：背景变深时，文字、边框、光标颜色会自动跟着反转。设置和词库、错题本一样只保存在本机。'));
 
   var row = rowEl('div', 'row');
@@ -12432,7 +12563,10 @@ function bindSettings() {
   $('setFsUp').addEventListener('click', function () { setLook(null, LOOK.fs + 0.05); });
   $('setFs').addEventListener('input', function () { setLook(null, parseFloat(this.value)); });
   $('setColor').addEventListener('input', function () { setLook(this.value); });
-  $('setReset').addEventListener('click', function () { setLook('#f8f8f6', 1); toast('已恢复默认外观'); });
+  $('setSndOn').addEventListener('change', function () { setSnd(!!this.checked, null); sndPlay('ok'); });
+  $('setSndVol').addEventListener('input', function () { setSnd(null, parseInt(this.value, 10) / 100); sndPlay('ok'); });
+  $('setSndDown').addEventListener('click', function () { setSnd(null, Math.max(0, +(SND.vol - 0.1).toFixed(2))); sndPlay('ok'); });
+  $('setReset').addEventListener('click', function () { LOOK.bg = null; LOOK.dark = 'auto'; setLook(null, 1); toast('已恢复默认外观'); });
   $('setClose').addEventListener('click', closeModal);
 }
 
@@ -12634,6 +12768,22 @@ function renderPrompt() {
   box.appendChild(small);
 }
 
+/* ========== 渲染（v2.0：增量更新，长诗打字不卡） ========== */
+/* 缓存结构：_rt = { sig, text, byPos:[{el,pos,ch,td}...], y, curEl, lastTop }
+   同一题首次渲染时整题重建；之后每次击键只更新发生变化的字符和光标，DOM 操作从 O(n) 降到 O(1) */
+var _rt = null;
+function paintChar(r, td, hide, caret) {
+  var el = r.el, cls = 'ch';
+  if (hide) {
+    if (td) { el.textContent = td; cls += td === r.ch ? ' ok' : ' bad'; }
+    else { el.textContent = r.poem ? '·' : '_'; cls += ' skip'; }
+  } else {
+    el.textContent = r.ch;
+    if (td) cls += td === r.ch ? ' ok' : ' bad';
+  }
+  if (caret) cls += ' cur';
+  el.className = cls;
+}
 function renderTarget() {
   var box = $('target'), q = cur();
   var hide = hiddenMode();
@@ -12641,58 +12791,78 @@ function renderTarget() {
   var qsig = q ? (q.text + '|' + (S.revealed ? 1 : 0)) : '';
   if (box.getAttribute('data-q') !== qsig) { box.setAttribute('data-q', qsig); hideWordPop(); }
   box.className = 'target' + (q && q.isPoem ? ' poem' : '') + (q && q.isPoem && q.show ? ' pinyin' : '') + (asWords ? ' words' : '');
-  box.textContent = '';
-  if (!q) return;
+  if (!q) { box.textContent = ''; _rt = null; return; }
   var text = q.text, y = strip(S.typed);
-  var refIdx = 0, frag = document.createDocumentFragment();
-  var word = null;
-
-  function addChar(sp) {
-    if (!asWords) { frag.appendChild(sp); return; }
-    if (!word) { word = document.createElement('span'); word.className = 'wd'; }
-    word.appendChild(sp);
-  }
-  function closeWord() {
-    if (!word) return;
-    var raw = '';
-    for (var i = 0; i < word.childNodes.length; i++) raw += word.childNodes[i].textContent || '';
-    var g = glossFor(raw);
-    if (g) { var gl = document.createElement('span'); gl.className = 'gl'; gl.textContent = g; word.appendChild(gl); }
-    frag.appendChild(word);
-    word = null;
-  }
-
-  for (var i = 0; i < text.length; i++) {
-    var ch = text.charAt(i);
-    if (asWords && /\s/.test(ch)) { closeWord(); frag.appendChild(document.createTextNode(' ')); continue; }
-    var sp = document.createElement('span');
-    sp.className = 'ch';
-    if (isPunct(ch)) {
-      sp.className += ' skip';
-      sp.textContent = ch;
-      addChar(sp);
-      continue;
+  var sig = qsig + '|' + (hide ? 1 : 0) + '|' + (asWords ? 1 : 0) + '|' + S.phase;
+  if (!_rt || _rt.sig !== sig || _rt.text !== text) {
+    /* ---- 整题重建 ---- */
+    box.textContent = '';
+    var refIdx = 0, frag = document.createDocumentFragment();
+    var word = null, byPos = [];
+    function addChar(sp, pos, ch) {
+      if (pos >= 0) byPos.push({ el: sp, pos: pos, ch: ch, td: null, poem: !!q.isPoem });
+      if (!asWords) { frag.appendChild(sp); return; }
+      if (!word) { word = document.createElement('span'); word.className = 'wd'; }
+      word.appendChild(sp);
     }
-    var pos = refIdx++;
-    var td = y.charAt(pos);
-    if (hide) {
-      if (td) {
-        sp.textContent = td;
-        sp.className += td === ch ? ' ok' : ' bad';
-      } else {
-        sp.textContent = q.isPoem ? '·' : '_';
+    function closeWord() {
+      if (!word) return;
+      var raw = '';
+      for (var i = 0; i < word.childNodes.length; i++) raw += word.childNodes[i].textContent || '';
+      var g = glossFor(raw);
+      if (g) { var gl = document.createElement('span'); gl.className = 'gl'; gl.textContent = g; word.appendChild(gl); }
+      frag.appendChild(word);
+      word = null;
+    }
+    for (var i = 0; i < text.length; i++) {
+      var ch = text.charAt(i);
+      if (asWords && /\s/.test(ch)) { closeWord(); frag.appendChild(document.createTextNode(' ')); continue; }
+      var sp = document.createElement('span');
+      sp.className = 'ch';
+      if (isPunct(ch)) {
         sp.className += ' skip';
-        if (pos === y.length && S.phase === 'typing') sp.className += ' cur';
+        sp.textContent = ch;
+        addChar(sp, -1, ch);
+        continue;
       }
-    } else {
+      var pos = refIdx++;
       sp.textContent = ch;
-      if (td) sp.className += td === ch ? ' ok' : ' bad';
-      else if (pos === y.length && S.phase === 'typing') sp.className += ' cur';
+      addChar(sp, pos, ch);
     }
-    addChar(sp);
+    closeWord();
+    box.appendChild(frag);
+    _rt = { sig: sig, text: text, byPos: byPos, y: '', curEl: null, curElRecord: null, lastTop: -1 };
+    for (var b = 0; b < byPos.length; b++) {
+      byPos[b].td = b < y.length ? y.charAt(b) : '';
+      paintChar(byPos[b], byPos[b].td, hide, false);
+    }
+    var wantCur0 = (S.phase === 'typing') ? byPos[y.length] : null;
+    if (wantCur0) { wantCur0.el.className += ' cur'; _rt.curEl = wantCur0.el; _rt.curElRecord = wantCur0; }
+  } else {
+    /* ---- 增量更新：只重画输入发生变化的字符 + 移动光标 ---- */
+    var wantCur = (S.phase === 'typing') ? _rt.byPos[y.length] : null;
+    var bp = _rt.byPos;
+    for (var j = 0; j < bp.length; j++) {
+      var r = bp[j];
+      var td = j < y.length ? y.charAt(j) : '';
+      if (td === r.td && (r !== wantCur || r.el.className.indexOf('cur') >= 0)) continue;
+      r.td = td;
+      paintChar(r, td, hide, r === wantCur);
+    }
+    if (wantCur !== _rt.curElRecord) {
+      if (_rt.curEl) _rt.curEl.classList.remove('cur');
+      if (wantCur) wantCur.el.classList.add('cur');
+      _rt.curEl = wantCur ? wantCur.el : null;
+      _rt.curElRecord = wantCur;
+    }
   }
-  closeWord();
-  box.appendChild(frag);
+  _rt.y = y;
+  /* ---- 长文跟打：当前行换行时自动滚入视口（scroll-margin 保证不贴边） ---- */
+  var ce = _rt.curEl;
+  if (ce && typeof ce.scrollIntoView === 'function' && ce.offsetTop !== _rt.lastTop) {
+    _rt.lastTop = ce.offsetTop;
+    try { ce.scrollIntoView({ block: 'nearest' }); } catch (e) { }
+  }
 }
 
 function liveSeconds() {
@@ -12747,6 +12917,8 @@ function start() {
   S.i = 0; S.done = 0; S.keys = 0; S.errs = 0;
   S.totalTime = 0; S.charsDone = 0; S.misLogged = false;
   S.typed = ''; S.revealed = false; S.t0 = 0; S.tRunning = false;
+  sparkData = [];
+  drawSpark();
   $('hidden').value = '';
   $('composing').textContent = '';
   if (!S.qs.length) {
@@ -12788,6 +12960,9 @@ function sync() {
     if (y.charAt(i) !== t.charAt(i)) {
       S.errs++;
       if (!S.misLogged) { S.misLogged = true; addMistake(q, 'error'); }
+      sndPlay('err');
+    } else {
+      sndPlay('ok');
     }
   }
   if (y.length && !S.tRunning) { S.tRunning = true; S.t0 = Date.now(); }
@@ -12807,9 +12982,8 @@ function complete() {
   S.tRunning = false;
   S.done++;
   if (q) S.charsDone += strip(q.text).length;
-  var sp = speedNow();
-  saveBest(sp);
   renderTarget(); renderStats();
+  sndPlay('tick');
   if (q && q.hidden) {
     var shown = q.show || q.text;
     toast('✓ ' + (shown.length > 56 ? shown.slice(0, 56) + '…' : shown));
@@ -12830,6 +13004,13 @@ function finish() {
   S.i = S.qs.length;
   S.typed = '';
   renderPrompt(); renderTarget(); renderStats(); renderBest();
+  pushHistory({
+    ts: Date.now(), tab: S.tab, mode: S.mode[S.tab] || '', src: S.source[S.tab] || '',
+    cnt: S.count[S.tab], done: S.done, total: S.qs.length, chars: S.charsDone,
+    speed: sp, acc: accuracy(), sec: Math.round(sec * 10) / 10
+  });
+  saveBest(sp);
+  sndPlay('done');
   toast('本组完成：' + S.done + ' 题 · ' + sp + (UNIT[S.tab] === 'WPM' ? ' WPM' : ' 字/分') + ' · 正确率 ' + accuracy() + '%');
 }
 
@@ -12860,6 +13041,286 @@ function saveBest(sp) {
     save(K.best, b);
   }
   renderBest();
+}
+
+/* ========== v2.0：历史成绩 / 曲线 / 分享卡片 / 实时速度条 ========== */
+function histAll() {
+  var h = load(K.hist, []);
+  return Array.isArray(h) ? h : [];
+}
+function pushHistory(rec) {
+  var h = histAll();
+  h.push(rec);
+  if (h.length > 500) h = h.slice(h.length - 500);
+  save(K.hist, h);
+}
+function p2(x) { return (x < 10 ? '0' : '') + x; }
+function fmtTs(ts) {
+  var d = new Date(ts);
+  return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+}
+function srcName(tab, src) {
+  if (!src) return '—';
+  if (src.indexOf('c:') === 0) {
+    var nm = '自定义';
+    customLists().forEach(function (c) { if (c.id === src.slice(2)) nm = c.name; });
+    return nm;
+  }
+  var m = { cet4: '四级', cet6: '六级', oxford: '牛津3000', cet4s: '四级长句', cet6s: '六级长句', zh: '常用词语', poem: '唐诗宋词' };
+  return m[src] || src;
+}
+function modeName(tab, mode) {
+  var mm = { type: '看打', toen: '中→英', tozh: '看英写拼音', dict: '听写', poem: '跟打', recite: '默写' };
+  return mm[mode] || mode || '—';
+}
+function tabName(tab) { return ({ en: '英文', zh: '中文', poem: '诗词' }[tab] || tab || '—'); }
+
+/* ---- 实时速度条 ---- */
+var sparkData = [];
+function drawSpark() {
+  var svg = $('spark');
+  if (!svg) return;
+  if (sparkData.length < 2) { svg.hidden = true; return; }
+  svg.hidden = false;
+  var W = 600, H = 38, n = sparkData.length, max = 1, i;
+  for (i = 0; i < n; i++) if (sparkData[i] > max) max = sparkData[i];
+  var pts = [];
+  for (i = 0; i < n; i++) {
+    pts.push(((i / (n - 1)) * W).toFixed(1) + ',' + (H - 3 - (sparkData[i] / max) * (H - 8)).toFixed(1));
+  }
+  var last = pts[pts.length - 1].split(',');
+  svg.innerHTML =
+    '<path d="M0,' + H + ' L' + pts.join(' L') + ' L' + W + ',' + H + ' Z" style="fill:var(--accent);opacity:.10"></path>' +
+    '<polyline points="' + pts.join(' ') + '" style="fill:none;stroke:var(--accent);stroke-width:2" stroke-linejoin="round" stroke-linecap="round"></polyline>' +
+    '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="3" style="fill:var(--accent)"></circle>';
+}
+
+/* ---- 成绩弹窗 ---- */
+var HIST_FILTER = 'all';
+function openStats() {
+  var h = $('hidden');
+  if (h && h.blur) h.blur();
+  $('modal').classList.add('on');
+  buildStatsModal();
+  document.body.classList.add('blurred');
+}
+function buildStatsModal() {
+  var m = $('modal');
+  var card = rowEl('div', 'card');
+  card.appendChild(rowEl('h2', null, '成绩统计'));
+  card.appendChild(rowEl('p', 'tip', '每打完一组自动记录一条，最多保留 500 条，只存在本机浏览器里。'));
+  var seg = rowEl('div', 'seg'); seg.id = 'histSeg';
+  [['all', '全部'], ['en', '英文'], ['zh', '中文'], ['poem', '诗词']].forEach(function (p) {
+    var b = rowEl('button', null, p[1]); b.type = 'button'; b.setAttribute('data-v', p[0]);
+    b.addEventListener('click', function () { HIST_FILTER = p[0]; paintStats(card); });
+    seg.appendChild(b);
+  });
+  card.appendChild(seg);
+  var body = rowEl('div'); body.id = 'histBody';
+  card.appendChild(body);
+  var row = rowEl('div', 'row');
+  var csv = rowEl('button', 'ghost', '导出 CSV'); csv.id = 'histCsv';
+  var share = rowEl('button', 'ghost', '分享本组成绩'); share.id = 'histShare';
+  var clear = rowEl('button', 'ghost danger', '清空历史'); clear.id = 'histClear';
+  var close = rowEl('button', 'primary', '关闭'); close.id = 'closeModal';
+  row.appendChild(csv); row.appendChild(share); row.appendChild(clear); row.appendChild(close);
+  card.appendChild(row);
+  m.textContent = '';
+  m.appendChild(card);
+  paintStats(card);
+  $('histCsv').addEventListener('click', exportHistoryCsv);
+  $('histShare').addEventListener('click', function () { shareCard(); });
+  $('histClear').addEventListener('click', function () {
+    if (!confirm('清空全部历史成绩？此操作不可恢复。')) return;
+    save(K.hist, []);
+    paintStats(card);
+    toast('历史成绩已清空');
+  });
+  $('closeModal').addEventListener('click', closeModal);
+}
+function sumCell(b, s) {
+  var c = rowEl('div', 'cell');
+  c.appendChild(rowEl('b', null, b));
+  c.appendChild(rowEl('span', null, s));
+  return c;
+}
+function paintStats(card) {
+  var segs = card.querySelectorAll('#histSeg button');
+  for (var i = 0; i < segs.length; i++) segs[i].className = segs[i].getAttribute('data-v') === HIST_FILTER ? 'on' : '';
+  var body = $('histBody');
+  if (!body) return;
+  body.textContent = '';
+  var all = histAll();
+  var rows = HIST_FILTER === 'all' ? all.slice() : all.filter(function (r) { return r.tab === HIST_FILTER; });
+
+  var h3 = rowEl('h3', null, '汇总');
+  h3.appendChild(rowEl('span', 'tag', rows.length + ' 组'));
+  body.appendChild(h3);
+  if (!rows.length) {
+    body.appendChild(rowEl('p', 'tip', '还没有记录。练完一组就会出现在这里。'));
+  } else {
+    var sec = 0, acc = 0, sp = 0, qn = 0, ch = 0;
+    rows.forEach(function (r) { sec += r.sec || 0; acc += r.acc || 0; sp += r.speed || 0; qn += r.done || 0; ch += r.chars || 0; });
+    var sum = rowEl('div', 'sum');
+    sum.appendChild(sumCell(String(rows.length), '练习组数'));
+    sum.appendChild(sumCell(Math.round(sec / 6) / 10 + '', '总时长(分)'));
+    sum.appendChild(sumCell(String(qn), '完成题数'));
+    sum.appendChild(sumCell(ch >= 10000 ? (ch / 1000).toFixed(1) + 'k' : String(ch), '总字符'));
+    sum.appendChild(sumCell(Math.round(sp / rows.length) + '', '平均速度'));
+    sum.appendChild(sumCell(Math.round(acc / rows.length) + '%', '平均正确率'));
+    body.appendChild(sum);
+  }
+
+  /* 各标签最佳 */
+  var b = load(K.best, {}) || {};
+  var bestLine = [];
+  [['en', '英文'], ['zh', '中文'], ['poem', '诗词']].forEach(function (p) {
+    if (b[p[0]] && b[p[0]].speed) bestLine.push(p[1] + ' ' + Math.round(b[p[0]].speed) + (p[0] === 'en' ? ' WPM' : ' 字/分'));
+  });
+  if (bestLine.length) body.appendChild(rowEl('p', 'tip', '最佳（整组）：' + bestLine.join('　')));
+
+  /* 曲线 */
+  body.appendChild(rowEl('h3', null, '速度与正确率曲线'));
+  var chart = rows.slice(-40);
+  if (chart.length < 2) {
+    body.appendChild(rowEl('p', 'chart-tip', '至少需要两组记录才能画曲线。'));
+  } else {
+    var W = 640, H = 190, PL = 38, PR = 38, PT = 14, PB = 24;
+    var iw = W - PL - PR, ih = H - PT - PB;
+    var maxSp = 10;
+    chart.forEach(function (r) { if ((r.speed || 0) > maxSp) maxSp = r.speed; });
+    maxSp = Math.ceil(maxSp / 10) * 10;
+    function X(i) { return PL + (chart.length === 1 ? iw / 2 : i / (chart.length - 1) * iw); }
+    function YS(v) { return PT + ih - (v / maxSp) * ih; }
+    function YA(v) { return PT + ih - (v / 100) * ih; }
+    var spPts = chart.map(function (r, i) { return X(i).toFixed(1) + ',' + YS(r.speed || 0).toFixed(1); });
+    var accPts = chart.map(function (r, i) { return X(i).toFixed(1) + ',' + YA(r.acc || 0).toFixed(1); });
+    var area = 'M' + X(0).toFixed(1) + ',' + (PT + ih) + ' L' + spPts.join(' L') + ' L' + X(chart.length - 1).toFixed(1) + ',' + (PT + ih) + ' Z';
+    var grid = '', t;
+    for (t = 0; t <= 2; t++) {
+      var gy = PT + (ih / 2) * t;
+      var gv = Math.round(maxSp - (maxSp / 2) * t);
+      grid += '<line x1="' + PL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - PR) + '" y2="' + gy.toFixed(1) + '" style="stroke:var(--line);stroke-width:1"></line>' +
+        '<text x="' + (PL - 6) + '" y="' + (gy + 4).toFixed(1) + '" text-anchor="end" style="fill:var(--muted);font-size:10px">' + gv + '</text>';
+    }
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" role="img" aria-label="成绩曲线">' +
+      grid +
+      '<text x="' + (W - PR + 6) + '" y="' + (PT + 10) + '" style="fill:var(--muted);font-size:10px">100%</text>' +
+      '<path d="' + area + '" style="fill:var(--accent);opacity:.10"></path>' +
+      '<polyline points="' + spPts.join(' ') + '" style="fill:none;stroke:var(--accent);stroke-width:2" stroke-linejoin="round"></polyline>' +
+      '<polyline points="' + accPts.join(' ') + '" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4"></polyline>' +
+      '<text x="' + PL + '" y="' + (H - 6) + '" style="fill:var(--muted);font-size:10px">' + fmtTs(chart[0].ts) + '</text>' +
+      '<text x="' + (W - PR) + '" y="' + (H - 6) + '" text-anchor="end" style="fill:var(--muted);font-size:10px">' + fmtTs(chart[chart.length - 1].ts) + '</text>' +
+      '</svg>';
+    var box = rowEl('div', 'chartbox');
+    box.innerHTML = svg;
+    body.appendChild(box);
+    var lg = rowEl('div', 'legend');
+    var l1 = document.createElement('span');
+    l1.innerHTML = '<i style="background:var(--accent)"></i>速度';
+    var l2 = document.createElement('span');
+    l2.innerHTML = '<i style="background:var(--muted)"></i>正确率';
+    lg.appendChild(l1); lg.appendChild(l2);
+    body.appendChild(lg);
+  }
+
+  /* 最近成绩 */
+  body.appendChild(rowEl('h3', null, '最近成绩'));
+  if (!rows.length) {
+    body.appendChild(rowEl('p', 'chart-tip', '（暂无记录）'));
+  } else {
+    var ul = rowEl('ul', 'hist');
+    rows.slice(-8).reverse().forEach(function (r) {
+      var li = rowEl('li');
+      li.appendChild(rowEl('b', null, r.speed + (r.tab === 'en' ? ' WPM' : ' 字/分')));
+      li.appendChild(rowEl('span', null, '正确率 ' + r.acc + '%'));
+      li.appendChild(rowEl('span', null, r.done + '/' + r.total + ' 题'));
+      li.appendChild(rowEl('span', null, r.sec + 's'));
+      li.appendChild(rowEl('span', null, tabName(r.tab) + ' · ' + modeName(r.tab, r.mode) + ' · ' + srcName(r.tab, r.src)));
+      li.appendChild(rowEl('span', null, fmtTs(r.ts)));
+      ul.appendChild(li);
+    });
+    body.appendChild(ul);
+  }
+}
+function csvQ(s) {
+  s = String(s == null ? '' : s);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function exportHistoryCsv() {
+  var rows = histAll();
+  if (!rows.length) { toast('还没有成绩记录'); return; }
+  var lines = ['时间,分类,模式,词库,完成题数,速度,单位,正确率%,用时s,字符数'];
+  rows.forEach(function (r) {
+    lines.push([
+      csvQ(new Date(r.ts).toLocaleString()), csvQ(tabName(r.tab)), csvQ(modeName(r.tab, r.mode)),
+      csvQ(srcName(r.tab, r.src)), r.done + '/' + r.total, r.speed,
+      r.tab === 'en' ? 'WPM' : '字/分', r.acc, r.sec, r.chars || 0
+    ].join(','));
+  });
+  var blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '简练快打-成绩-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { try { URL.revokeObjectURL(a.href); } catch (e) {} a.remove(); }, 3000);
+  toast('已导出 ' + rows.length + ' 条成绩');
+}
+
+/* ---- 分享卡片：整组成绩画成 PNG ---- */
+var CANVAS_SANS = '"PingFang SC","Microsoft YaHei","Segoe UI",-apple-system,sans-serif';
+function shareCard() {
+  var rows = histAll();
+  var r = rows[rows.length - 1];
+  if (!r) { toast('还没有成绩记录，先练一组吧'); return; }
+  var W = 1080, H = 608;
+  var cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  var ctx = cv.getContext('2d');
+  if (!ctx) { toast('当前浏览器不支持Canvas'); return; }
+  var bg = effBg(), dark = luma(bg) < 0.52;
+  var fg = dark ? shade(bg, .88) : '#1c1c1a';
+  var muted = dark ? shade(bg, .60) : '#66665e';
+  var accent = dark ? '#63c2a4' : '#2f6f5e';
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = accent; ctx.fillRect(0, 0, W, 10);
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = fg;
+  ctx.font = '600 36px ' + CANVAS_SANS;
+  ctx.fillText('TypeLab · 打字实验室', 64, 96);
+  ctx.font = '24px ' + CANVAS_SANS;
+  ctx.fillStyle = muted;
+  ctx.fillText('简练快打 — 单文件离线打字练习', 64, 134);
+  ctx.fillStyle = fg;
+  ctx.font = '700 148px ' + CANVAS_SANS;
+  ctx.fillText(String(r.speed), 64, 306);
+  var spW = ctx.measureText(String(r.speed)).width;
+  ctx.font = '600 40px ' + CANVAS_SANS;
+  ctx.fillStyle = accent;
+  ctx.fillText(r.tab === 'en' ? 'WPM' : '字/分', 64 + spW + 20, 306);
+  ctx.font = '30px ' + CANVAS_SANS;
+  ctx.fillStyle = fg;
+  ctx.fillText('正确率 ' + r.acc + '% · 用时 ' + r.sec + 's · 完成 ' + r.done + '/' + r.total + ' 题', 64, 374);
+  ctx.font = '26px ' + CANVAS_SANS;
+  ctx.fillStyle = muted;
+  ctx.fillText(tabName(r.tab) + ' · ' + modeName(r.tab, r.mode) + ' · ' + srcName(r.tab, r.src) + ' · ' + new Date(r.ts).toLocaleString(), 64, 422);
+  ctx.font = '22px ' + CANVAS_SANS;
+  ctx.fillText('github.com/PGDN-1/jianlian-kuaida', 64, H - 52);
+  try {
+    cv.toBlob(function (blob) {
+      if (!blob) { toast('生成失败'); return; }
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '简练快打-成绩-' + r.speed + (r.tab === 'en' ? 'wpm' : 'cpm') + '.png';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { try { URL.revokeObjectURL(a.href); } catch (e) {} a.remove(); }, 3000);
+      toast('成绩卡片已导出');
+    }, 'image/png');
+  } catch (e) { toast('生成失败'); }
 }
 
 /* ========== 语音 ========== */
@@ -13195,15 +13656,20 @@ function bindModal() {
     var rows = [];
     miss.forEach(function (m) {
       if (m.lang !== lang) return;
-      if (lang === 'poem') rows.push({ p: 1, title: '错题', author: '', dyn: '', text: m.t, en: m.hint || '' });
+      var row;
+      if (lang === 'poem') row = { p: 1, title: '错题', author: '', dyn: '', text: m.t, en: m.hint || '' };
       else if (lang === 'zh') {
         var zhRow = null;
         ZHWORDS.forEach(function (x) { if (x.t === m.t) zhRow = x; });
-        rows.push({ w: 1, text: m.t, hint: m.hint || '', py: zhRow ? zhRow.py : '' });
+        row = { w: 1, text: m.t, hint: m.hint || '', py: zhRow ? zhRow.py : '' };
       }
-      else rows.push({ w: 1, text: m.t, hint: m.hint || '' });
+      else row = { w: 1, text: m.t, hint: m.hint || '' };
+      /* 间隔重复：错得越多的词，在这一组里重复出现次数越多（1~5 次） */
+      var w = Math.max(1, Math.min(5, m.n || 1));
+      for (var k = 0; k < w; k++) rows.push(row);
     });
     if (!rows.length) { toast('当前分类下没有错题'); return; }
+    shuffle(rows);
     var lists = customLists().filter(function (x) { return x.id !== 'mistakes-tmp'; });
     lists.push({ id: 'mistakes-tmp', lang: lang, name: '错题复习', rows: rows });
     save(K.custom, lists);
@@ -13286,6 +13752,7 @@ $('zhInput').addEventListener('change', function () { S.zhInput = this.value ===
 $('startBtn').addEventListener('click', function () { start(); });
 $('manageBtn').addEventListener('click', openModal);
 $('settingsBtn').addEventListener('click', openSettings);
+$('statsBtn').addEventListener('click', openStats);
 $('speakBtn').addEventListener('click', function () { speak(); });
 $('skipBtn').addEventListener('click', function () { skip(); });
 $('revealBtn').addEventListener('click', function () { reveal(); });
@@ -13358,6 +13825,31 @@ focusInput();
 setInterval(function () {
   if (S.phase === 'typing' && S.tRunning) renderStats();
 }, 200);
+
+/* 实时速度条：打字时每 300ms 采样一次 */
+setInterval(function () {
+  if (S.phase === 'typing' && S.tRunning) {
+    sparkData.push(speedNow());
+    if (sparkData.length > 160) sparkData.shift();
+    drawSpark();
+  }
+}, 300);
+
+/* 移动端：软键盘弹出/收起时，保证当前行在视口内 */
+if (window.visualViewport && window.visualViewport.addEventListener) {
+  window.visualViewport.addEventListener('resize', function () {
+    if (document.activeElement === $('hidden') && _rt && _rt.curEl && typeof _rt.curEl.scrollIntoView === 'function') {
+      try { _rt.curEl.scrollIntoView({ block: 'nearest' }); } catch (e) { }
+    }
+  });
+}
+
+/* PWA：仅在 http(s) 下注册 service worker；双击打开的 file:// 页面完全不受影响 */
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').catch(function () { });
+  });
+}
 </script>
 </body>
 </html>
