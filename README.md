@@ -21,7 +21,7 @@ An offline, single-file typing trainer for **Chinese pinyin + English**, with CE
 - 数据来源与授权：[DATA-SOURCES.md](DATA-SOURCES.md)
 - 桌面版构建说明：[app/README.md](app/README.md)
 - 在线网页版：<https://pgdn-1.github.io/jianlian-kuaida/>
-- Windows 安装包：[Releases](https://github.com/PGDN-1/jianlian-kuaida/releases)（打 `v*` tag 自动构建，见下文「桌面版发布」）
+- Windows 安装包：[Releases](https://github.com/PGDN-1/jianlian-kuaida/releases)（最新 [v2.0.0](https://github.com/PGDN-1/jianlian-kuaida/releases/tag/v2.0.0)；打 `v*` tag 自动构建，见下文「桌面版发布」）
   - 安装版 `jianlian-kuaida-setup-<版本>.exe`（约 107 MB，可选安装目录、自动建快捷方式）
   - 便携版 `jianlian-kuaida-portable-<版本>.exe`（约 106 MB，免安装，双击即用）
   - 未做代码签名，首次运行 Windows SmartScreen 可能提示「未知发布者」，点「更多信息 → 仍要运行」即可
@@ -52,7 +52,7 @@ An offline, single-file typing trainer for **Chinese pinyin + English**, with CE
 
 1. **在线网页版**：直接打开 <https://pgdn-1.github.io/jianlian-kuaida/>，什么都不用下（GitHub Pages 托管，数据存在该浏览器的 localStorage）。
 2. **安装成 PWA 应用（v2.0 新增）**：用 Chrome / Edge 打开在线网页版，点地址栏右侧的「安装」图标（或菜单 → 将 TypeLab 安装为应用），就能像原生应用一样从开始菜单启动，且完全离线可用。页面在 `file://` 下双击打开时这一套自动不启用，行为与以前完全一致。
-3. **桌面版（推荐）**：装 `D:\DS工作站\typing-lab\dist\简练快打-安装版-2.0.0.exe`，或直接用免安装的 `简练快打-便携版-2.0.0.exe`。桌面版是 Electron 外壳，有自己的窗口和图标，数据存在 `D:\DS工作站\typing-lab\app-data`，不会被浏览器清缓存清掉。外壳源码在 `app/`（见 `app/README.md`）。
+3. **桌面版**：到 [Releases · v2.0.0](https://github.com/PGDN-1/jianlian-kuaida/releases/tag/v2.0.0) 下载 `jianlian-kuaida-setup-2.0.0.exe`（约 107 MB，可选安装目录、自动建快捷方式）或 `jianlian-kuaida-portable-2.0.0.exe`（约 106 MB，免安装，双击即用）。桌面版是 Electron 外壳，有自己的窗口和图标，数据存在 `app-data` 目录，不会被浏览器清缓存清掉。外壳源码在 `app/`（见 `app/README.md`）。未做代码签名，首次运行 Windows SmartScreen 可能提示「未知发布者」，点「更多信息 → 仍要运行」即可。
 4. **双击网页版**：直接双击 `index.html`，或用任意浏览器打开（Chrome / Edge / Firefox 均可）。
 5. **桌面快捷方式**：`C:\Users\li\Desktop\简练快打.lnk` 指向网页版，双击即用。
 
